@@ -1,19 +1,34 @@
 const fs = require('fs');
 
 let rawDataTree = require('./raw.data');
-const expectedDataTree = [];
 
 rawDataTree = rawDataTree.sort((a, b) => a.start - b.start);
-let output = [];
+let hoisted = [];
 
 function getFirstChild(stack, parent) {
-    return stack.find(d => d.tier === parent.tier && d.start > parent.start);
+    const firstChild = stack.find(
+        d => d.tier === parent.tier && d.start > parent.start
+    );
+    if (firstChild) hoisted.push(`${firstChild.start}-${firstChild.tier}`);
+    return firstChild ? { ...firstChild, children: [] } : firstChild;
 }
 
 function getSiblings(stack, child) {
-    return stack.filter(
-        d => d.tier.startsWith(child.tier) && d.tier !== child.tier
+    const siblings = [];
+    stack.forEach(
+        (d) => {
+            const truthy = d.tier.startsWith(child.tier) 
+            && d.tier !== child.tier
+            && !hoisted.includes(`${d.start}-${d.tier}`);
+
+            if (truthy) {
+                hoisted.push(`${d.start}-${d.tier}`);
+                siblings.push(buildDataTree(stack, d));
+            }
+        }
     );
+
+    return siblings;
 }
 
 let parent = rawDataTree.shift();
@@ -32,17 +47,9 @@ function buildDataTree(stack, tree) {
 
     if (siblings.length) parent.children = parent.children.concat(siblings);
 
-    if (parent.children.length) {
-        parent.children = parent.children.map(
-            child => buildDataTree(stack, child)
-        );
-    }
-    console.log(parent);
     return parent;
 }
-console.log('initially: ', parent);
 
 parent = buildDataTree(rawDataTree, parent);
 
-
-fs.writeFileSync('output.json', JSON.stringify(parent, null, 4));
+fs.writeFileSync('output.json', JSON.stringify([parent], null, 4));
