@@ -1,4 +1,4 @@
-module.exports = [
+[
     {
         "start": 1526915703274,
         "tier": "2467-359",
@@ -320,4 +320,4 @@ module.exports = [
             }
         ]
     }
-];
+]
